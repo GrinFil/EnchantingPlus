@@ -1,5 +1,6 @@
 package eplus;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.*;
@@ -10,6 +11,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.ItemData;
 import eplus.blocks.Blocks;
 import eplus.commands.EplusCommands;
+import eplus.events.EnchantmentRegisterEvent;
 import eplus.handlers.ConfigurationHandler;
 import eplus.handlers.LanguageHandler;
 import eplus.handlers.PluginHandler;
@@ -24,9 +26,11 @@ import eplus.network.PlayerTracker;
 import eplus.network.packets.BasePacket;
 import eplus.network.proxies.CommonProxy;
 import eplus.plugins.EplusPlugin;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraftforge.event.ForgeSubscribe;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,8 +50,7 @@ import java.util.logging.Logger;
         packetHandler = PacketHandler.class,
         connectionHandler = ConnectionHandler.class,
         clientSideRequired = true)
-public class EnchantingPlus
-{
+public class EnchantingPlus {
 
     @Mod.Instance(References.MODID)
     public static EnchantingPlus INSTANCE;
@@ -59,9 +62,10 @@ public class EnchantingPlus
     public static CommonProxy proxy;
     public static Map<Integer, String> itemMap = new HashMap<Integer, String>();
 
+    public static Map<Enchantment, String> enchantmentModMap = new HashMap<Enchantment, String>();
+
     @Mod.PreInit
-    public void preInit(FMLPreInitializationEvent event)
-    {
+    public void preInit(FMLPreInitializationEvent event) {
         log = event.getModLog();
         ConfigurationHandler.init(event.getSuggestedConfigurationFile());
         Version.init(event.getVersionProperties());
@@ -85,8 +89,7 @@ public class EnchantingPlus
     }
 
     @Mod.Init
-    public void init(FMLInitializationEvent event)
-    {
+    public void init(FMLInitializationEvent event) {
         Blocks.init();
 
         registerTileEntity(TileEnchantTable.class);
@@ -102,14 +105,12 @@ public class EnchantingPlus
         PluginHandler.initPlugins(event.getModState());
     }
 
-    private void registerTileEntity(Class<? extends TileEntity> tileEntity)
-    {
+    private void registerTileEntity(Class<? extends TileEntity> tileEntity) {
         GameRegistry.registerTileEntity(tileEntity, References.MODID + ":" + tileEntity.getSimpleName());
     }
 
     @Mod.ServerStarting
-    public void serverStarting(FMLServerStartingEvent event)
-    {
+    public void serverStarting(FMLServerStartingEvent event) {
         event.registerServerCommand(new EplusCommands());
     }
 
@@ -181,5 +182,11 @@ public class EnchantingPlus
                 }
             }
         }
+    }
+
+    @ForgeSubscribe
+    public static void getEnchanmentsByMod(EnchantmentRegisterEvent event) {
+        Loader.instance().getModClassLoader();
+        enchantmentModMap.put(event.enchantment, event.modId);
     }
 }
